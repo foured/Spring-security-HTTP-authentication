@@ -6,7 +6,7 @@ The simpliest spring security HTTP authentication, no csfr.
 Объект SpringSecurityClient сериализуемый. 
 
 # Подготовка
-Сначала надо выкчить csrf:
+Сначала надо выкчить csrf в проекте сервера:
 ```java
 @Bean
 public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -16,6 +16,20 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .build();
 }
 ```
+Добавьте зависимость в проект клиента
+Maven
+```xml
+<dependency>
+    <groupId>org.apache.httpcomponents</groupId>
+    <artifactId>httpclient</artifactId>
+    <version>4.5.13</version>
+</dependency>
+```
+Gradle
+```
+implementation 'org.apache.httpcomponents:httpclient:4.5'
+```
+
 # Использование
 
 Создание объекта
