@@ -5,6 +5,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
@@ -12,6 +13,7 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,9 +47,23 @@ public class SpringSecurityClient implements Serializable {
     // async
     //
 
+    // default cookies
+
     public CompletableFuture<String> get_async(String url){
         return CompletableFuture.supplyAsync(() -> {
             return get(url);
+        });
+    }
+
+    public CompletableFuture<String> get_async(String url, List<NameValuePair> params){
+        return CompletableFuture.supplyAsync(() -> {
+            return get(url, params);
+        });
+    }
+
+    public CompletableFuture<String> post_async(String url,  String json){
+        return CompletableFuture.supplyAsync(() -> {
+            return post(url, json);
         });
     }
 
@@ -57,9 +73,23 @@ public class SpringSecurityClient implements Serializable {
         });
     }
 
+    // no cookies
+
     public static CompletableFuture<String> get_nc_async(String url){
         return CompletableFuture.supplyAsync(() -> {
             return get_nc(url);
+        });
+    }
+
+    public static CompletableFuture<String> get_nc_async(String url, List<NameValuePair> params){
+        return CompletableFuture.supplyAsync(() -> {
+            return get_nc(url, params);
+        });
+    }
+
+    public static CompletableFuture<String> post_nc_async(String url, String json){
+        return CompletableFuture.supplyAsync(() -> {
+            return post_nc(url, json);
         });
     }
 
@@ -69,12 +99,26 @@ public class SpringSecurityClient implements Serializable {
         });
     }
 
+    // custom cookies
+
     public static CompletableFuture<String> get_async(String url, BasicCookieStore cookieStore){
         return CompletableFuture.supplyAsync(() -> {
             return get(url, cookieStore);
         });
     }
 
+    public static CompletableFuture<String> get_async(String url, List<NameValuePair> params, BasicCookieStore cookieStore){
+        return CompletableFuture.supplyAsync(() -> {
+            return get(url, params, cookieStore);
+        });
+    }
+
+    public static CompletableFuture<String> post_async(String url, String json, BasicCookieStore cookieStore){
+        return CompletableFuture.supplyAsync(() -> {
+            return post(url, json, cookieStore);
+        });
+    }
+    
     public static CompletableFuture<String> post_async(String url, List<NameValuePair> params, BasicCookieStore cookieStore){
         return CompletableFuture.supplyAsync(() -> {
             return post(url, params, cookieStore);
@@ -85,40 +129,113 @@ public class SpringSecurityClient implements Serializable {
     // not async
     //
 
+    // default cookies
+
     public String get(String url) {
         return get(url, cookies);
+    }
+
+    public String get(String url, List<NameValuePair> params){
+        return get(url, params, cookies);
+    }
+
+    public String post(String url, String json){
+        return post(url, json, cookies);
     }
 
     public String post(String url, List<NameValuePair> params) {
         return post(url, params, cookies);
     }
 
+    // no cookies
+
     public static String get_nc(String url){
-        return r2s(get_base(url, HttpClients.createDefault()));
+        HttpClient httpClient = HttpClients.createDefault();
+        HttpGet httpGet = new HttpGet(url);
+        return r2s(get_base(httpGet, httpClient));
+    }
+
+    public static String get_nc(String url, List<NameValuePair> params){
+        HttpClient httpClient = HttpClients.createDefault();
+        String paramsString = null;
+        try {
+            paramsString = EntityUtils.toString(new UrlEncodedFormEntity(params));
+        } catch (IOException e) {
+            System.out.println("Error to convert params: " + params.toString());
+            return null;
+        }
+        HttpGet httpGet = new HttpGet(url + "?" + paramsString);
+        return r2s(get_base(httpGet, httpClient));
+    }
+
+    public static String post_nc(String url, String json){
+        HttpClient httpClient = HttpClients.createDefault();
+        HttpPost httpPost = new HttpPost(url);
+        StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
+        httpPost.setEntity(entity);
+        return r2s(post_base(httpPost, httpClient));
     }
 
     public static String post_nc(String url,  List<NameValuePair> params){
-        return r2s(post_base(url, params, HttpClients.createDefault()));
+        HttpClient httpClient = HttpClients.createDefault();
+        HttpPost httpPost = new HttpPost(url);
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(params));
+        } catch (UnsupportedEncodingException e) {
+            System.out.println("Error to convert params: " + params.toString());
+            return null;
+        }
+        return r2s(post_base(httpPost, httpClient));
     }
 
-    public static String get(String url, BasicCookieStore cookieStore)  {
+    // custom cookies
+
+    public static String get(String url, BasicCookieStore cookieStore){
         HttpClient httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
-        return r2s(get_base(url, httpClient));
+        HttpGet httpGet = new HttpGet(url);
+        return r2s(get_base(httpGet, httpClient));
+    }
+
+    public static String get(String url, List<NameValuePair> params, BasicCookieStore cookieStore){
+        HttpClient httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
+        String paramsString = null;
+        try {
+            paramsString = EntityUtils.toString(new UrlEncodedFormEntity(params));
+        } catch (IOException e) {
+            System.out.println("Error to convert params: " + params.toString());
+            return null;
+        }
+        HttpGet httpGet = new HttpGet(url + "?" + paramsString);
+        return r2s(get_base(httpGet, httpClient));
+    }
+
+    public static String post(String url, String json, BasicCookieStore cookieStore){
+        HttpClient httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
+        HttpPost httpPost = new HttpPost(url);
+        StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
+        httpPost.setEntity(entity);
+        return r2s(post_base(httpPost, httpClient));
     }
 
     public static String post(String url, List<NameValuePair> params, BasicCookieStore cookieStore) {
         HttpClient httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
-        return r2s(post_base(url, params, httpClient));
+        HttpPost httpPost = new HttpPost(url);
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(params));
+        } catch (UnsupportedEncodingException e) {
+            System.out.println("Error to convert params: " + params.toString());
+            return null;
+        }
+        return r2s(post_base(httpPost, httpClient));
     }
 
     //
     // private
     //
 
-    private static HttpResponse get_base(String url, HttpClient httpClient){
+    private static HttpResponse get_base(HttpGet httpGet, HttpClient httpClient){
+        String url = httpGet.getURI().toString();
         try {
-            HttpGet httpGet = new HttpGet(url);
-
             HttpResponse response = httpClient.execute(httpGet);
             StatusLine statusLine = response.getStatusLine();
 
@@ -136,32 +253,9 @@ public class SpringSecurityClient implements Serializable {
         }
     }
 
-    private static HttpResponse post_base(String url,  HttpClient httpClient){
+    private static HttpResponse post_base(HttpPost httpPost,  HttpClient httpClient){
+        String url = httpPost.getURI().toString();
         try {
-            HttpPost httpPost = new HttpPost(url);
-
-            HttpResponse response = httpClient.execute(httpPost);
-            StatusLine statusLine = response.getStatusLine();
-
-            if (statusLine.getStatusCode() != HttpStatus.SC_OK) {
-                System.out.println("HTTP status is not ok in 'post' at address '" + url + ": " + statusLine.getStatusCode());
-                processStatusCode(response);
-            }
-
-            return response;
-        }
-        catch (IOException e){
-            System.out.println("Error with 'post' at address '" + url + ": ");
-            System.out.println(e);
-            return null;
-        }
-    }
-
-    private static HttpResponse post_base(String url, List<NameValuePair> params, HttpClient httpClient){
-        try {
-            HttpPost httpPost = new HttpPost(url);
-
-            httpPost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
             HttpResponse response = httpClient.execute(httpPost);
             StatusLine statusLine = response.getStatusLine();
 
