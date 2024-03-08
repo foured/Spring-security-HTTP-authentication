@@ -2,13 +2,14 @@ package org.example;
 
 import okhttp3.*;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class SpringSecurityClient {
 
-    public class MyCookieJar implements CookieJar {
+    public static class MyCookieJar implements CookieJar {
         private List<Cookie> cookies = new ArrayList<>();
 
         @Override
@@ -25,6 +26,10 @@ public class SpringSecurityClient {
                 }
             }
             return validCookies;
+        }
+
+        private void setCookies(List<Cookie> cookies){
+            this.cookies = cookies;
         }
     }
     public static class Pair {
@@ -48,7 +53,7 @@ public class SpringSecurityClient {
     private final MyCookieJar cookieJar;
     private final OkHttpClient client_main;
 
-    public SpringSecurityClient(String url, String username, String password){
+    private SpringSecurityClient(String url, String username, String password){
         try {
             cookieJar = new MyCookieJar();
             client_main = new OkHttpClient.Builder()
@@ -71,9 +76,112 @@ public class SpringSecurityClient {
         }
     }
 
+    private SpringSecurityClient(List<Cookie> cookies){
+        cookieJar = new MyCookieJar();
+        cookieJar.setCookies(cookies);
+        client_main = new OkHttpClient.Builder()
+                .cookieJar(cookieJar)
+                .build();
+    }
+
+    //
+    // help methods
+    //
+
+    public static SpringSecurityClient createFromCookiesData(byte[] serializedCookies){
+        SpringSecurityClient client = null;
+
+        try{
+            List<SerializableCookie> serializableCookies = deserializeCookies(serializedCookies);
+            List<Cookie> cookies = new ArrayList<>();
+
+            for(SerializableCookie serializableCookie : serializableCookies){
+                cookies.add(serializableCookie.toCookie());
+            }
+
+            client = new SpringSecurityClient(cookies);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return client;
+    }
+
+    public static SpringSecurityClient login(String url, String username, String password) {
+        try {
+            MyCookieJar m_cookieJar = new MyCookieJar();
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .cookieJar(m_cookieJar)
+                    .build();
+            HttpUrl.Builder queryUrlBuilder = HttpUrl.get(url).newBuilder();
+            queryUrlBuilder
+                    .addQueryParameter("username", username)
+                    .addQueryParameter("password", password);
+
+            Request request = new Request.Builder()
+                    .url(queryUrlBuilder.build())
+                    .post(RequestBody.create(null, new byte[0]))
+                    .build();
+            Response response = client.newCall(request).execute();
+
+            return new SpringSecurityClient(m_cookieJar.cookies);
+        }
+        catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static SpringSecurityClient login_ns(String url, String username, String password) throws IOException, AuthenticationException {
+        MyCookieJar m_cookieJar = new MyCookieJar();
+        OkHttpClient client = new OkHttpClient.Builder()
+                .cookieJar(m_cookieJar)
+                .build();
+        HttpUrl.Builder queryUrlBuilder = HttpUrl.get(url).newBuilder();
+        queryUrlBuilder
+                .addQueryParameter("username", username)
+                .addQueryParameter("password", password);
+
+        Request request = new Request.Builder()
+                .url(queryUrlBuilder.build())
+                .post(RequestBody.create(null, new byte[0]))
+                .build();
+        Response response = client.newCall(request).execute();
+
+        if(response.code() != 403){
+            throw new AuthenticationException("Can`t authenticate.");
+        }
+
+        return new SpringSecurityClient(m_cookieJar.cookies);
+    }
+
     public List<Cookie> getCookies(){
         return cookieJar.cookies;
     }
+
+    public byte[] serializeCookies() {
+        List<SerializableCookie> cookies = new ArrayList<>();
+
+        for(Cookie cookie : cookieJar.cookies) {
+            cookies.add(new SerializableCookie(cookie));
+        }
+
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+            objectOutputStream.writeObject(cookies);
+            return byteArrayOutputStream.toByteArray();
+        }
+        catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static List<SerializableCookie> deserializeCookies(byte[] serializedCookies) throws IOException, ClassNotFoundException {
+        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedCookies);
+             ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
+            return (List<SerializableCookie>) objectInputStream.readObject();
+        }
+    }
+
 
     //
     // work methods
