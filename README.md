@@ -38,13 +38,13 @@ implementation 'org.apache.httpcomponents:httpclient:4.5'
 SpringSecurityClient client = new SpringSecurityClient("http://localhost:8080/login", "admin", "admin");
 ```
 
-Get с подставление cookies без асинхронности
+Get с подставлением cookies без асинхронности
 ```java
 String link = "some link"
 client.get(link);
 ```
 
-Post с подставление cookies без асинхронности
+Post с подставлением cookies без асинхронности
 ```java
 String link = "some link"
 
@@ -55,13 +55,13 @@ params.add(new BasicNameValuePair("value2", "value2"));
 client.post(link, params);
 ```
 
-Get без подставление cookies без асинхронности
+Get без подставлением cookies без асинхронности
 ```java
 String link = "some link"
 client.get_nc(link);
 ```
 
-Post без подставление cookies без асинхронности
+Post без подставлением cookies без асинхронности
 ```java
 String link = "some link"
 
@@ -72,7 +72,7 @@ params.add(new BasicNameValuePair("value2", "value2"));
 client.post_nc(link, params);
 ```
 
-Get с подставление своих cookies без асинхронности
+Get с подставлением своих cookies без асинхронности
 ```java
 BasicCookieStore cookieStore = new BasicCookieStore();
 // создание куки 
@@ -82,7 +82,7 @@ client.get(link, cookieStore)
 
 ```
 
-Post с подставление своих cookies без асинхронности
+Post с подставлением своих cookies без асинхронности
 ```java
 BasicCookieStore cookieStore = new BasicCookieStore();
 // создание куки 
@@ -96,7 +96,7 @@ params.add(new BasicNameValuePair("value2", "value2"));
 client.post_nc(link, params);
 ```
 
-Get с подставление cookies, асинхронный
+Get с подставлением cookies, асинхронный
 ```java
 String link = "some link"
 
@@ -107,7 +107,7 @@ result.thenAccept(res -> {
 });
 ```
 
-Post с подставление cookies, асинхронный
+Post с подставлением cookies, асинхронный
 ```java
 String link = "some link"
 
@@ -122,7 +122,7 @@ result.thenAccept(res -> {
 });
 ```
 
-Get без подставление cookies, асинхронный
+Get без подставлением cookies, асинхронный
 ```java
 String link = "some link"
 
@@ -133,7 +133,7 @@ result.thenAccept(res -> {
 });
 ```
 
-Post без подставление cookies, асинхронный
+Post без подставлением cookies, асинхронный
 ```java
 String link = "some link"
 
@@ -148,7 +148,7 @@ result.thenAccept(res -> {
 });
 ```
 
-Get с подставление своих cookies, асинхронный
+Get с подставлением своих cookies, асинхронный
 ```java
 BasicCookieStore cookieStore = new BasicCookieStore();
 // создание куки 
@@ -162,7 +162,7 @@ result.thenAccept(res -> {
 
 ```
 
-Post с подставление своих cookies, асинхронный
+Post с подставлением своих cookies, асинхронный
 ```java
 BasicCookieStore cookieStore = new BasicCookieStore();
 // создание куки 
