@@ -1,5 +1,5 @@
 # Spring-security-HTTP-authentication
-The simpliest spring security HTTP authentication, no csfr. (for android check okhttp branch)
+The simpliest spring security HTTP authentication, no csrf. (for android check okhttp branch)
 
 # Описание
 При создании клиента программа получает куки файл с кодом для авторизации, который дальше добавляется во все запросы.
